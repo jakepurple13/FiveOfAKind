@@ -27,7 +27,6 @@ import kotlinx.coroutines.launch
 import moe.tlaster.precompose.viewmodel.ViewModel
 import moe.tlaster.precompose.viewmodel.viewModel
 import moe.tlaster.precompose.viewmodel.viewModelScope
-import kotlin.math.max
 import kotlin.random.Random
 import kotlin.random.nextInt
 
@@ -165,7 +164,6 @@ internal class YahtzeeViewModel : ViewModel() {
         scores.resetScores()
         showGameOverDialog = true
     }
-
 }
 
 internal class Dice(value: Int = Random.nextInt(1..6), @Suppress("unused") val location: String) {
