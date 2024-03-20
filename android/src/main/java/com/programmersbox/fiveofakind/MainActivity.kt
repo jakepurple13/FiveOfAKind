@@ -8,6 +8,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import com.programmersbox.common.UIShow
 
@@ -35,8 +36,15 @@ fun CustomMaterialTheme(
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
 
-        darkTheme -> darkColorScheme()
-        else -> lightColorScheme()
+        darkTheme -> darkColorScheme(
+            primary = Color(0xff90CAF9),
+            secondary = Color(0xff90CAF9),
+        )
+
+        else -> lightColorScheme(
+            primary = Color(0xff2196F3),
+            secondary = Color(0xff90CAF9),
+        )
     }
     MaterialTheme(
         colorScheme = colorScheme,

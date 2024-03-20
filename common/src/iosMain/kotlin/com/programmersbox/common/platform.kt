@@ -10,6 +10,7 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.window.ComposeUIViewController
 import kotlinx.cinterop.ExperimentalForeignApi
 import platform.Foundation.NSDocumentDirectory
@@ -43,7 +44,16 @@ private fun UIShow() {
 
 public fun MainViewController(): UIViewController = ComposeUIViewController {
     MaterialTheme(
-        colorScheme = if (isSystemInDarkTheme()) darkColorScheme() else lightColorScheme()
+        colorScheme = if (isSystemInDarkTheme())
+            darkColorScheme(
+                primary = Color(0xff90CAF9),
+                secondary = Color(0xff90CAF9),
+            )
+        else
+            lightColorScheme(
+                primary = Color(0xff2196F3),
+                secondary = Color(0xff90CAF9),
+            )
     ) {
         Surface(
             modifier = Modifier.fillMaxSize(),
