@@ -17,3 +17,9 @@ plugins {
     alias(libs.plugins.kotlin.android) apply false
     id("org.jetbrains.compose") version libs.versions.compose.version.get() apply false
 }
+
+buildscript {
+    dependencies {
+        classpath("io.realm.kotlin:gradle-plugin:1.11.0")
+    }
+}

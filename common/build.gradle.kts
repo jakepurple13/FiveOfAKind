@@ -3,6 +3,7 @@ plugins {
     id("org.jetbrains.compose")
     id("com.android.library")
     kotlin("native.cocoapods")
+    id("io.realm.kotlin")
 }
 
 group = "com.programmersbox"
@@ -17,12 +18,12 @@ kotlin {
     }
     jvm("desktop") {
         compilations.all {
-            kotlinOptions.jvmTarget = "11"
+            kotlinOptions.jvmTarget = "17"
         }
     }
-    js(IR) {
+    /*js(IR) {
         browser()
-    }
+    }*/
     applyDefaultHierarchyTemplate()
     ios()
     iosX64()
@@ -50,6 +51,9 @@ kotlin {
                 api(compose.material3)
                 api(libs.precompose.viewmodel)
                 api(libs.precompose)
+                api(libs.library.base)
+                api(libs.kotlinx.datetime)
+                api(libs.kotlinx.coroutines.core)
             }
         }
 
@@ -74,11 +78,11 @@ kotlin {
 
         val desktopTest by getting
 
-        val jsMain by getting {
+        /*val jsMain by getting {
             dependencies {
                 api(compose.html.core)
             }
-        }
+        }*/
 
         val iosX64Main by getting
         val iosArm64Main by getting
@@ -91,8 +95,6 @@ kotlin {
             iosSimulatorArm64Main.dependsOn(this)
         }
     }
-
-    explicitApi()
 }
 
 android {
@@ -103,7 +105,8 @@ android {
         targetSdk = 34
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
     }
+    namespace = "com.programmersbox.common"
 }

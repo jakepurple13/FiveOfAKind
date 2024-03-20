@@ -11,5 +11,5 @@ rootProject.name = "FiveOfAKind"
 
 include(":android")
 include(":desktop")
-include(":jsApp")
+//include(":jsApp")
 include(":common")

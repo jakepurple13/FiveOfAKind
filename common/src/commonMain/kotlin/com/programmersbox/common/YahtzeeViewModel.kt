@@ -56,19 +56,19 @@ internal class YahtzeeViewModel : ViewModel() {
     }
 
     fun placeOnes() {
-        //scores.getOnes(hand)
+        if (hand.all { it.value == 0 }) return
         scores.getSmall(hand, HandType.Ones)
         reset()
     }
 
     fun placeTwos() {
-        //scores.getTwos(hand)
+        if (hand.all { it.value == 0 }) return
         scores.getSmall(hand, HandType.Twos)
         reset()
     }
 
     fun placeThrees() {
-        //scores.getThrees(hand)
+        if (hand.all { it.value == 0 }) return
         scores.getSmall(hand, HandType.Threes)
         reset()
     }
@@ -80,48 +80,55 @@ internal class YahtzeeViewModel : ViewModel() {
     }
 
     fun placeFives() {
-        //scores.getFives(hand)
+        if (hand.all { it.value == 0 }) return
         scores.getSmall(hand, HandType.Fives)
         reset()
     }
 
     fun placeSixes() {
-        //scores.getSixes(hand)
+        if (hand.all { it.value == 0 }) return
         scores.getSmall(hand, HandType.Sixes)
         reset()
     }
 
     fun placeThreeOfKind() {
+        if (hand.all { it.value == 0 }) return
         scores.getThreeOfAKind(hand)
         reset()
     }
 
     fun placeFourOfKind() {
+        if (hand.all { it.value == 0 }) return
         scores.getFourOfAKind(hand)
         reset()
     }
 
     fun placeFullHouse() {
+        if (hand.all { it.value == 0 }) return
         scores.getFullHouse(hand)
         reset()
     }
 
     fun placeSmallStraight() {
+        if (hand.all { it.value == 0 }) return
         scores.getSmallStraight(hand)
         reset()
     }
 
     fun placeLargeStraight() {
+        if (hand.all { it.value == 0 }) return
         scores.getLargeStraight(hand)
         reset()
     }
 
     fun placeYahtzee() {
+        if (hand.all { it.value == 0 }) return
         scores.getYahtzee(hand)
         reset()
     }
 
     fun placeChance() {
+        if (hand.all { it.value == 0 }) return
         scores.getChance(hand)
         reset()
     }

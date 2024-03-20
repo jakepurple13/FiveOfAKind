@@ -2,16 +2,22 @@
 kotlin-version = "1.9.22"
 agp-version = "7.3.0"
 compose-version = "1.6.1"
+kotlinx-coroutines-core = "1.8.0"
+kotlinx-datetime = "0.6.0-RC.2"
+library-base = "1.11.0"
 precompose = "1.6.0-rc04"
 
 [plugins]
-android-application = { id = "com.android.application", version.ref = "agp.version" }
-android-library = { id = "com.android.library", version.ref = "agp.version" }
-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin.version" }
+android-application = { id = "com.android.application", version.ref = "agp-version" }
+android-library = { id = "com.android.library", version.ref = "agp-version" }
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin-version" }
 
 [libraries]
 androidx-appcompat = { module = "androidx.appcompat:appcompat", version = "1.6.1" }
-androidx-core = { module = "androidx.core:core-ktx", version = "1.10.1" }
-androidx-activity-compose = "androidx.activity:activity-compose:1.8.0"
+androidx-core = { module = "androidx.core:core-ktx", version = "1.12.0" }
+androidx-activity-compose = "androidx.activity:activity-compose:1.8.2"
+kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx-coroutines-core" }
+kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinx-datetime" }
+library-base = { module = "io.realm.kotlin:library-base", version.ref = "library-base" }
 precompose = { module = "moe.tlaster:precompose", version.ref = "precompose" }
 precompose-viewmodel = { module = "moe.tlaster:precompose-viewmodel", version.ref = "precompose" }
