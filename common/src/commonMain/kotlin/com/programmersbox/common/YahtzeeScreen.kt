@@ -26,6 +26,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import kotlinx.datetime.*
+import kotlinx.datetime.format.MonthNames
+import kotlinx.datetime.format.char
 import moe.tlaster.precompose.flow.collectAsStateWithLifecycle
 import moe.tlaster.precompose.viewmodel.viewModel
 
@@ -471,7 +473,19 @@ private fun HighScoreItem(
 
     val time = remember {
         val d = Instant.fromEpochMilliseconds(item.time).toLocalDateTime(TimeZone.currentSystemDefault())
-        "${d.month.name} ${d.dayOfMonth} ${d.year}, ${d.hour}:${d.minute}"
+        d.format(
+            LocalDateTime.Format {
+                monthName(MonthNames.ENGLISH_FULL)
+                char(' ')
+                dayOfMonth()
+                char(' ')
+                year()
+                chars(", ")
+                hour()
+                char(':')
+                minute()
+            }
+        )
     }
 
     val smallScore = with(item) { ones + twos + threes + fours + fives + sixes }
