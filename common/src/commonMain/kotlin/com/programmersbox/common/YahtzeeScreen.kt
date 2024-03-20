@@ -6,6 +6,7 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -33,12 +34,14 @@ internal val Emerald = Color(0xFF2ecc71)
 internal val Sunflower = Color(0xFFf1c40f)
 internal val Alizarin = Color(0xFFe74c3c)
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 internal fun YahtzeeScreen(
     vm: YahtzeeViewModel = viewModel(YahtzeeViewModel::class) { YahtzeeViewModel() },
     yahtzeeDatabase: YahtzeeDatabase = remember { YahtzeeDatabase() },
+    settings: Settings,
 ) {
+    val diceLook by settings.showDotsOnDice.flow.collectAsStateWithLifecycle(true)
     val scope = rememberCoroutineScope()
     var newGameDialog by remember { mutableStateOf(false) }
 
@@ -85,7 +88,8 @@ internal fun YahtzeeScreen(
                             HighScoreItem(
                                 item = it,
                                 scaffoldState = drawerState,
-                                onDelete = { scope.launch { yahtzeeDatabase.removeHighScore(it) } }
+                                onDelete = { scope.launch { yahtzeeDatabase.removeHighScore(it) } },
+                                modifier = Modifier.animateItemPlacement()
                             )
                         }
                     }
@@ -99,11 +103,14 @@ internal fun YahtzeeScreen(
                     title = { Text("Yahtzee") },
                     actions = {
                         IconButton(onClick = { newGameDialog = true }) { Icon(Icons.Default.Add, null) }
-                        Dice(1, "").ShowDice(vm.diceLook, Modifier.size(40.dp)) { vm.diceLook = !vm.diceLook }
+                        Dice(1, "")
+                            .ShowDice(diceLook, Modifier.size(40.dp)) {
+                                scope.launch { settings.showDotsOnDice.update(!diceLook) }
+                            }
                     }
                 )
             },
-            bottomBar = { BottomBarDiceRow(vm, vm.diceLook) },
+            bottomBar = { BottomBarDiceRow(vm, diceLook) },
         ) { p ->
             if (vm.scores.isGameOver && vm.showGameOverDialog) {
                 LaunchedEffect(Unit) {
@@ -456,6 +463,7 @@ private fun HighScoreItem(
     item: YahtzeeScoreItem,
     scaffoldState: DrawerState,
     onDelete: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     var deleteDialog by remember { mutableStateOf(false) }
 
@@ -492,7 +500,8 @@ private fun HighScoreItem(
 
     Card(
         elevation = CardDefaults.cardElevation(defaultElevation = 10.dp),
-        border = BorderStroke(2.dp, MaterialTheme.colorScheme.background)
+        border = BorderStroke(2.dp, MaterialTheme.colorScheme.background),
+        modifier = modifier
     ) {
         ListItem(
             leadingContent = { IconButton(onClick = { deleteDialog = true }) { Icon(Icons.Default.Close, null) } },

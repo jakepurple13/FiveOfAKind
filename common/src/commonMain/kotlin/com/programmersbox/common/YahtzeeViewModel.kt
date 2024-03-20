@@ -21,8 +21,6 @@ internal class YahtzeeViewModel : ViewModel() {
 
     var state by mutableStateOf(YahtzeeState.RollOne)
 
-    var diceLook by mutableStateOf(true)
-
     val scores = YahtzeeScores()
 
     val hand = mutableStateListOf(

@@ -49,11 +49,14 @@ kotlin {
                 api(compose.foundation)
                 api(compose.materialIconsExtended)
                 api(compose.material3)
-                api(libs.precompose.viewmodel)
                 api(libs.precompose)
+                api(libs.precompose.viewmodel)
                 api(libs.library.base)
                 api(libs.kotlinx.datetime)
                 api(libs.kotlinx.coroutines.core)
+                api(libs.datastore.core)
+                api(libs.datastore.preferences)
+                implementation(libs.kotlinx.atomicfu)
             }
         }
 

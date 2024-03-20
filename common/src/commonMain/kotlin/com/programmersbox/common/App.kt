@@ -4,8 +4,12 @@ import androidx.compose.runtime.Composable
 import moe.tlaster.precompose.PreComposeApp
 
 @Composable
-public fun App() {
+public fun App(
+    settings: Settings,
+) {
     PreComposeApp {
-        YahtzeeScreen()
+        YahtzeeScreen(
+            settings = settings
+        )
     }
 }

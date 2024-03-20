@@ -1,6 +1,7 @@
 package com.programmersbox.common
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 
 public actual fun getPlatformName(): String {
     return "FiveOfAKind"
@@ -8,5 +9,7 @@ public actual fun getPlatformName(): String {
 
 @Composable
 public fun UIShow() {
-    App()
+    App(
+        settings = remember { Settings { Settings.dataStoreFileName } }
+    )
 }

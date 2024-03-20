@@ -6,6 +6,8 @@ kotlinx-coroutines-core = "1.8.0"
 kotlinx-datetime = "0.6.0-RC.2"
 library-base = "1.11.0"
 precompose = "1.6.0-rc04"
+datastore-version = "1.1.0-beta02"
+atomicfu = "0.23.2"
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp-version" }
@@ -21,3 +23,6 @@ kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.
 library-base = { module = "io.realm.kotlin:library-base", version.ref = "library-base" }
 precompose = { module = "moe.tlaster:precompose", version.ref = "precompose" }
 precompose-viewmodel = { module = "moe.tlaster:precompose-viewmodel", version.ref = "precompose" }
+datastore-core = { module = "androidx.datastore:datastore-core", version.ref = "datastore-version" }
+datastore-preferences = { module = "androidx.datastore:datastore-preferences-core", version.ref = "datastore-version" }
+kotlinx-atomicfu = { module = "org.jetbrains.kotlinx:atomicfu", version.ref = "atomicfu" }

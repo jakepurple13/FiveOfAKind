@@ -52,6 +52,11 @@ android {
                 signingConfig = signingConfigs.getByName("release")
             }
         }
+        create("beta") {
+            initWith(getByName("debug"))
+            matchingFallbacks.addAll(listOf("debug", "release"))
+            isDebuggable = false
+        }
     }
 }
 
