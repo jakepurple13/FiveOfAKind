@@ -32,6 +32,13 @@ class Settings(
         )
     }
 
+    val use24HourTime by lazy {
+        DataStoreTypeDefaultNonNull(
+            booleanPreferencesKey("use24HourTime"),
+            true
+        )
+    }
+
     open inner class DataStoreType<T>(
         protected val key: Preferences.Key<T>,
     ) {

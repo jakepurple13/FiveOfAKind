@@ -1,7 +1,9 @@
 package com.programmersbox.common
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.Crossfade
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.animateIntAsState
@@ -13,10 +15,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -29,6 +28,7 @@ import kotlinx.datetime.*
 import kotlinx.datetime.format.MonthNames
 import kotlinx.datetime.format.char
 import moe.tlaster.precompose.flow.collectAsStateWithLifecycle
+import moe.tlaster.precompose.navigation.BackHandler
 import moe.tlaster.precompose.viewmodel.viewModel
 
 internal typealias ScoreClick = () -> Unit
@@ -45,6 +45,7 @@ internal fun YahtzeeScreen(
     settings: Settings,
 ) {
     val diceLook by settings.showDotsOnDice.flow.collectAsStateWithLifecycle(true)
+    val isUsing24HourTime by settings.use24HourTime.flow.collectAsStateWithLifecycle(true)
     val scope = rememberCoroutineScope()
     var newGameDialog by remember { mutableStateOf(false) }
 
@@ -66,6 +67,10 @@ internal fun YahtzeeScreen(
     }
 
     val drawerState = rememberDrawerState(DrawerValue.Closed)
+
+    BackHandler(drawerState.isOpen) {
+        scope.launch { drawerState.close() }
+    }
 
     ModalNavigationDrawer(
         drawerState = drawerState,
@@ -91,6 +96,7 @@ internal fun YahtzeeScreen(
                             HighScoreItem(
                                 item = it,
                                 scaffoldState = drawerState,
+                                isUsing24HourTime = isUsing24HourTime,
                                 onDelete = { scope.launch { yahtzeeDatabase.removeHighScore(it) } },
                                 modifier = Modifier.animateItemPlacement()
                             )
@@ -105,7 +111,15 @@ internal fun YahtzeeScreen(
                 TopAppBar(
                     title = { Text("Yahtzee") },
                     actions = {
-                        IconButton(onClick = { newGameDialog = true }) { Icon(Icons.Default.Add, null) }
+                        TextButton(onClick = { newGameDialog = true }) { Text("New Game") }
+                        TextButton(
+                            onClick = { scope.launch { settings.use24HourTime.update(!isUsing24HourTime) } },
+                        ) {
+                            Crossfade(isUsing24HourTime) { target ->
+                                Text(if (target) "24H" else "12H")
+                            }
+                        }
+                        Spacer(Modifier.width(12.dp))
                         Dice(1, "")
                             .ShowDice(diceLook, Modifier.size(40.dp)) {
                                 scope.launch { settings.showDotsOnDice.update(!diceLook) }
@@ -467,11 +481,12 @@ private fun HighScoreItem(
     item: YahtzeeScoreItem,
     scaffoldState: DrawerState,
     onDelete: () -> Unit,
+    isUsing24HourTime: Boolean,
     modifier: Modifier = Modifier,
 ) {
     var deleteDialog by remember { mutableStateOf(false) }
 
-    val time = remember {
+    val time = remember(isUsing24HourTime) {
         val d = Instant.fromEpochMilliseconds(item.time).toLocalDateTime(TimeZone.currentSystemDefault())
         d.format(
             LocalDateTime.Format {
@@ -481,9 +496,17 @@ private fun HighScoreItem(
                 char(' ')
                 year()
                 chars(", ")
-                hour()
-                char(':')
-                minute()
+                if (isUsing24HourTime) {
+                    hour()
+                    char(':')
+                    minute()
+                } else {
+                    amPmHour()
+                    char(':')
+                    minute()
+                    char(' ')
+                    amPmMarker("AM", "PM")
+                }
             }
         )
     }

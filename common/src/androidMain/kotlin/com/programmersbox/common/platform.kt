@@ -12,6 +12,8 @@ public actual fun getPlatformName(): String {
 public fun UIShow() {
     val context = LocalContext.current
 
+    //DateFormat.is24HourFormat(context)
+
     App(
         settings = remember { Settings { context.filesDir.resolve(Settings.dataStoreFileName).absolutePath } }
     )
