@@ -499,7 +499,7 @@ private fun HighScoreItem(
 
     var showMore by remember(scaffoldState.targetValue) { mutableStateOf(false) }
 
-    Card(
+    OutlinedCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 10.dp),
         border = BorderStroke(2.dp, MaterialTheme.colorScheme.background),
         modifier = modifier
