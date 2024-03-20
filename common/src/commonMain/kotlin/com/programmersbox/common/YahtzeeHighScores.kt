@@ -13,6 +13,8 @@ import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 
+private const val HIGHSCORE_LIMIT = 15
+
 internal class YahtzeeDatabase(name: String = Realm.DEFAULT_FILE_NAME) {
     private val realm by lazy {
         Realm.open(
@@ -35,6 +37,13 @@ internal class YahtzeeDatabase(name: String = Realm.DEFAULT_FILE_NAME) {
     suspend fun addHighScore(scoreItem: YahtzeeScoreItem) {
         realm.updateInfo<YahtzeeHighScores> {
             it?.highScoresList?.add(scoreItem)
+            val sorted = it?.highScoresList?.sortedByDescending { it.totalScore } ?: return@updateInfo
+            if (sorted.size >= HIGHSCORE_LIMIT) {
+                val expired = sorted.chunked(HIGHSCORE_LIMIT)
+                    .drop(1)
+                    .flatten()
+                it?.highScoresList?.removeAll(expired)
+            }
         }
     }
 
