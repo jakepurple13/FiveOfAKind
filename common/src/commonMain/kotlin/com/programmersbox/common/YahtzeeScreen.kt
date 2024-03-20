@@ -212,6 +212,7 @@ internal fun BottomBarDiceRow(vm: YahtzeeViewModel, diceLooks: Boolean) {
                 modifier = Modifier
                     .padding(horizontal = 4.dp)
                     .weight(1f)
+                    .aspectRatio(1f, true)
                     .border(
                         width = animateDpAsState(targetValue = if (dice in vm.hold) 4.dp else 0.dp).value,
                         color = animateColorAsState(targetValue = if (dice in vm.hold) Emerald else Color.Transparent).value,
