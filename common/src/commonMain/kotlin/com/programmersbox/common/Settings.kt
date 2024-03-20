@@ -11,11 +11,15 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
 import okio.Path.Companion.toPath
 
+private lateinit var dataStore: DataStore<Preferences>
+
 class Settings(
     producePath: () -> String,
 ) {
-    private val dataStore: DataStore<Preferences> =
-        PreferenceDataStoreFactory.createWithPath(produceFile = { producePath().toPath() })
+    init {
+        if (!::dataStore.isInitialized)
+            dataStore = PreferenceDataStoreFactory.createWithPath(produceFile = { producePath().toPath() })
+    }
 
     companion object {
         const val dataStoreFileName = "yahtzee.preferences_pb"
