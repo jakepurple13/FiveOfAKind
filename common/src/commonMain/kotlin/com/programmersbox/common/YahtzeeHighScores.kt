@@ -13,7 +13,7 @@ import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 
-private const val HIGHSCORE_LIMIT = 15
+internal const val HIGHSCORE_LIMIT = 15
 
 internal class YahtzeeDatabase(name: String = Realm.DEFAULT_FILE_NAME) {
     private val realm by lazy {

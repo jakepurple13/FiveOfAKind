@@ -9,6 +9,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -19,10 +20,18 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.layout.layout
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.datetime.*
 import kotlinx.datetime.format.MonthNames
@@ -30,6 +39,7 @@ import kotlinx.datetime.format.char
 import moe.tlaster.precompose.flow.collectAsStateWithLifecycle
 import moe.tlaster.precompose.navigation.BackHandler
 import moe.tlaster.precompose.viewmodel.viewModel
+import kotlin.math.roundToInt
 
 internal typealias ScoreClick = () -> Unit
 
@@ -37,7 +47,7 @@ internal val Emerald = Color(0xFF2ecc71)
 internal val Sunflower = Color(0xFFf1c40f)
 internal val Alizarin = Color(0xFFe74c3c)
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class)
 @Composable
 internal fun YahtzeeScreen(
     vm: YahtzeeViewModel = viewModel(YahtzeeViewModel::class) { YahtzeeViewModel() },
@@ -47,6 +57,11 @@ internal fun YahtzeeScreen(
     val diceLook by settings.showDotsOnDice.flow.collectAsStateWithLifecycle(true)
     val isUsing24HourTime by settings.use24HourTime.flow.collectAsStateWithLifecycle(true)
     val scope = rememberCoroutineScope()
+
+    val highScores by yahtzeeDatabase
+        .getYahtzeeHighScores()
+        .collectAsStateWithLifecycle(emptyList())
+
     var newGameDialog by remember { mutableStateOf(false) }
 
     if (newGameDialog) {
@@ -76,10 +91,6 @@ internal fun YahtzeeScreen(
         drawerState = drawerState,
         drawerContent = {
             ModalDrawerSheet {
-                val highScores by yahtzeeDatabase
-                    .getYahtzeeHighScores()
-                    .collectAsStateWithLifecycle(emptyList())
-
                 Scaffold(
                     topBar = {
                         TopAppBar(
@@ -111,6 +122,13 @@ internal fun YahtzeeScreen(
                 TopAppBar(
                     title = { Text("Yahtzee") },
                     actions = {
+                        TextButton(
+                            onClick = {
+                                HandType.entries.forEach {
+                                    vm.scores.scoreList[it] = 10
+                                }
+                            }
+                        ) { Text("Finish") }
                         TextButton(onClick = { newGameDialog = true }) { Text("New Game") }
                         TextButton(
                             onClick = { scope.launch { settings.use24HourTime.update(!isUsing24HourTime) } },
@@ -129,41 +147,6 @@ internal fun YahtzeeScreen(
             },
             bottomBar = { BottomBarDiceRow(vm, diceLook) },
         ) { p ->
-            if (vm.scores.isGameOver && vm.showGameOverDialog) {
-                LaunchedEffect(Unit) {
-                    yahtzeeDatabase.addHighScore(
-                        YahtzeeScoreItem().apply {
-                            ones = vm.scores.scoreList.getOrElse(HandType.Ones) { 0 }
-                            twos = vm.scores.scoreList.getOrElse(HandType.Twos) { 0 }
-                            threes = vm.scores.scoreList.getOrElse(HandType.Threes) { 0 }
-                            fours = vm.scores.scoreList.getOrElse(HandType.Fours) { 0 }
-                            fives = vm.scores.scoreList.getOrElse(HandType.Fives) { 0 }
-                            sixes = vm.scores.scoreList.getOrElse(HandType.Sixes) { 0 }
-                            threeKind = vm.scores.scoreList.getOrElse(HandType.ThreeOfAKind) { 0 }
-                            fourKind = vm.scores.scoreList.getOrElse(HandType.FourOfAKind) { 0 }
-                            fullHouse = vm.scores.scoreList.getOrElse(HandType.FullHouse) { 0 }
-                            smallStraight = vm.scores.scoreList.getOrElse(HandType.SmallStraight) { 0 }
-                            largeStraight = vm.scores.scoreList.getOrElse(HandType.LargeStraight) { 0 }
-                            yahtzee = vm.scores.scoreList.getOrElse(HandType.Yahtzee) { 0 }
-                            chance = vm.scores.scoreList.getOrElse(HandType.Chance) { 0 }
-                        }
-                    )
-                }
-                AlertDialog(
-                    onDismissRequest = { vm.showGameOverDialog = false },
-                    title = { Text("Game Over") },
-                    text = { Text("You got a score of ${vm.scores.totalScore}") },
-                    confirmButton = { TextButton(onClick = vm::resetGame) { Text("Play Again") } },
-                    dismissButton = {
-                        TextButton(
-                            onClick = {
-                                vm.showGameOverDialog = false
-                            }
-                        ) { Text("Stop Playing") }
-                    }
-                )
-            }
-
             Column(
                 modifier = Modifier.padding(p),
                 horizontalAlignment = Alignment.CenterHorizontally
@@ -216,6 +199,130 @@ internal fun YahtzeeScreen(
                 Text("Total Score: ${animateIntAsState(vm.scores.totalScore).value}")
             }
         }
+    }
+
+    if (vm.scores.isGameOver && vm.showGameOverDialog) {
+        var showExplosion by remember { mutableStateOf(false) }
+        LaunchedEffect(Unit) {
+            val showExplosionCheck = if (HIGHSCORE_LIMIT > highScores.size) {
+                true
+            } else {
+                vm.scores.totalScore >= (highScores.lastOrNull()?.totalScore ?: 0)
+            }
+            if (showExplosionCheck) {
+                showExplosion = true
+            }
+            yahtzeeDatabase.addHighScore(
+                YahtzeeScoreItem().apply {
+                    ones = vm.scores.scoreList.getOrElse(HandType.Ones) { 0 }
+                    twos = vm.scores.scoreList.getOrElse(HandType.Twos) { 0 }
+                    threes = vm.scores.scoreList.getOrElse(HandType.Threes) { 0 }
+                    fours = vm.scores.scoreList.getOrElse(HandType.Fours) { 0 }
+                    fives = vm.scores.scoreList.getOrElse(HandType.Fives) { 0 }
+                    sixes = vm.scores.scoreList.getOrElse(HandType.Sixes) { 0 }
+                    threeKind = vm.scores.scoreList.getOrElse(HandType.ThreeOfAKind) { 0 }
+                    fourKind = vm.scores.scoreList.getOrElse(HandType.FourOfAKind) { 0 }
+                    fullHouse = vm.scores.scoreList.getOrElse(HandType.FullHouse) { 0 }
+                    smallStraight = vm.scores.scoreList.getOrElse(HandType.SmallStraight) { 0 }
+                    largeStraight = vm.scores.scoreList.getOrElse(HandType.LargeStraight) { 0 }
+                    yahtzee = vm.scores.scoreList.getOrElse(HandType.Yahtzee) { 0 }
+                    chance = vm.scores.scoreList.getOrElse(HandType.Chance) { 0 }
+                }
+            )
+        }
+
+        if (showExplosion) {
+            Explosion()
+            FountainConfetti()
+        }
+
+        AlertDialog(
+            onDismissRequest = { vm.showGameOverDialog = false },
+            title = { Text("Game Over") },
+            text = { Text("You got a score of ${vm.scores.totalScore}") },
+            confirmButton = { TextButton(onClick = vm::resetGame) { Text("Play Again") } },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        vm.showGameOverDialog = false
+                    }
+                ) { Text("Stop Playing") }
+            }
+        )
+    }
+
+    var showParticles by remember(vm.scores.scoreList[HandType.Yahtzee]) {
+        mutableStateOf(vm.scores.scoreList[HandType.Yahtzee] != null)
+    }
+
+    Crossfade(showParticles) { target ->
+        if (target) {
+            LaunchedEffect(Unit) {
+                delay(3000)
+                showParticles = false
+            }
+            FountainConfetti()
+        }
+    }
+}
+
+@Composable
+internal fun FountainConfetti() {
+    BoxWithConstraints(
+        modifier = Modifier.fillMaxSize()
+    ) {
+        CreateParticles(
+            modifier = Modifier.matchParentSize(),
+            x = with(LocalDensity.current) { maxWidth.toPx() / 2 },
+            y = with(LocalDensity.current) { maxHeight.toPx() },
+            velocity = Velocity(xDirection = 1f, yDirection = -15f, angle = PI, randomize = true),
+            force = Force.Gravity(0.2f),
+            acceleration = Acceleration(0f, -4f),
+            particleSize = ParticleSize.RandomSizes(10..30),
+            particleColor = ParticleColor.RandomColors(
+                listOf(
+                    Color.Yellow,
+                    Color.Blue,
+                    Color.Red,
+                    Color.White,
+                    Color.Magenta,
+                    Color.Green
+                )
+            ),
+            lifeTime = LifeTime(255f, 1f),
+            emissionType = EmissionType.FlowEmission(maxParticlesCount = 300, emissionRate = 0.5f),
+            durationMillis = 3 * 1000
+        )
+    }
+}
+
+@Composable
+internal fun Explosion() {
+    BoxWithConstraints(
+        modifier = Modifier.fillMaxSize()
+    ) {
+        CreateParticles(
+            modifier = Modifier.matchParentSize(),
+            x = with(LocalDensity.current) { maxWidth.toPx() / 2 },
+            y = -50f,
+            velocity = Velocity(xDirection = 1f, yDirection = 1f, randomize = true),
+            force = Force.Gravity(0.01f),
+            acceleration = Acceleration(),
+            particleSize = ParticleSize.RandomSizes(10..30),
+            particleColor = ParticleColor.RandomColors(
+                listOf(
+                    Color.Yellow,
+                    Color.Blue,
+                    Color.Red,
+                    Color.White,
+                    Color.Magenta,
+                    Color.Green
+                )
+            ),
+            lifeTime = LifeTime(255f, 0.01f),
+            emissionType = EmissionType.FlowEmission(maxParticlesCount = 300, emissionRate = 0.5f),
+            durationMillis = 10 * 1000
+        )
     }
 }
 
