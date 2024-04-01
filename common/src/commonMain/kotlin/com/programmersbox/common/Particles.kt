@@ -1,21 +1,17 @@
 package com.programmersbox.common
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.withFrameNanos
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.DrawScope
+import kotlinx.datetime.Clock
+import kotlin.jvm.JvmField
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.random.Random
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.drawscope.DrawScope
 
 //Code from https://github.com/CuriousNikhil/compose-particle-system/tree/main
 
@@ -337,7 +333,7 @@ fun CreateParticles(
     val dt = remember { mutableStateOf(0f) }
 
     var startTime by remember { mutableStateOf(0L) }
-    var previousTime by remember { mutableStateOf(System.nanoTime()) }
+    var previousTime by remember { mutableLongStateOf(Clock.System.now().nanosecondsOfSecond.toLong()) }
 
     val emitter = remember {
         val particleConfigData = ParticleConfigData(
@@ -358,14 +354,14 @@ fun CreateParticles(
         }
     }
 
-    startTime = System.currentTimeMillis()
+    startTime = Clock.System.now().toEpochMilliseconds()
     LaunchedEffect(Unit) {
         val condition = if (emissionType is EmissionType.FlowEmission &&
             emissionType.maxParticlesCount == EmissionType.FlowEmission.INDEFINITE
         ) {
             true
         } else {
-            System.currentTimeMillis() - startTime < durationMillis
+            Clock.System.now().toEpochMilliseconds() - startTime < durationMillis
         }
         while (condition) {
             withFrameNanos {

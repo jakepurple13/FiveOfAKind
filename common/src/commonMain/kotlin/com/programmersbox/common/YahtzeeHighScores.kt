@@ -42,7 +42,7 @@ internal class YahtzeeDatabase(name: String = Realm.DEFAULT_FILE_NAME) {
                 val expired = sorted.chunked(HIGHSCORE_LIMIT)
                     .drop(1)
                     .flatten()
-                it?.highScoresList?.removeAll(expired)
+                it.highScoresList.removeAll(expired)
             }
         }
     }

@@ -1,5 +1,5 @@
 [versions]
-kotlin-version = "1.9.22"
+kotlin-version = "1.9.23"
 agp-version = "7.3.0"
 compose-version = "1.6.1"
 kotlinx-coroutines-core = "1.8.0"
