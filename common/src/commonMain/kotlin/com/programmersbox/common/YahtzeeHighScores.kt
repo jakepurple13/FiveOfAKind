@@ -4,10 +4,10 @@ import io.realm.kotlin.MutableRealm
 import io.realm.kotlin.Realm
 import io.realm.kotlin.RealmConfiguration
 import io.realm.kotlin.ext.asFlow
-import io.realm.kotlin.ext.realmListOf
+import io.realm.kotlin.ext.query
+import io.realm.kotlin.query.Sort
 import io.realm.kotlin.types.RealmInstant
 import io.realm.kotlin.types.RealmObject
-import io.realm.kotlin.types.annotations.Ignore
 import io.realm.kotlin.types.annotations.PrimaryKey
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.datetime.Clock
@@ -21,10 +21,11 @@ internal class YahtzeeDatabase(name: String = Realm.DEFAULT_FILE_NAME) {
             RealmConfiguration.Builder(
                 setOf(
                     YahtzeeHighScores::class,
-                    YahtzeeScoreItem::class
+                    YahtzeeScoreItem::class,
+                    YahtzeeScoreStat::class
                 )
             )
-                .schemaVersion(24)
+                .schemaVersion(27)
                 .name(name)
                 .migration({ })
                 //.deleteRealmIfMigrationNeeded()
@@ -35,28 +36,89 @@ internal class YahtzeeDatabase(name: String = Realm.DEFAULT_FILE_NAME) {
     private val yahtzeeHighScores: YahtzeeHighScores = realm.initDbBlocking { YahtzeeHighScores() }
 
     suspend fun addHighScore(scoreItem: YahtzeeScoreItem) {
-        realm.updateInfo<YahtzeeHighScores> {
-            it?.highScoresList?.add(scoreItem)
-            val sorted = it?.highScoresList?.sortedByDescending { it.totalScore } ?: return@updateInfo
-            if (sorted.size >= HIGHSCORE_LIMIT) {
-                val expired = sorted.chunked(HIGHSCORE_LIMIT)
+        scoreItem.setScores()
+        realm.write {
+            copyToRealm(scoreItem)
+
+            val scores = query<YahtzeeScoreItem>()
+                .sort("totalScore", Sort.DESCENDING)
+                .find()
+
+            if (scores.size > HIGHSCORE_LIMIT) {
+                scores.chunked(HIGHSCORE_LIMIT)
                     .drop(1)
                     .flatten()
-                it.highScoresList.removeAll(expired)
+                    .mapNotNull { findLatest(it) }
+                    .forEach { delete(it) }
+            }
+
+            query<YahtzeeHighScores>()
+                .first()
+                .find()
+                ?.let { updateScoreStats(it, scoreItem) }
+        }
+    }
+
+    private fun updateScoreStats(yahtzeeHighScores: YahtzeeHighScores, scoreItem: YahtzeeScoreItem) {
+        val scoreToStatMap = mapOf(
+            scoreItem::ones to yahtzeeHighScores::ones,
+            scoreItem::twos to yahtzeeHighScores::twos,
+            scoreItem::threes to yahtzeeHighScores::threes,
+            scoreItem::fours to yahtzeeHighScores::fours,
+            scoreItem::fives to yahtzeeHighScores::fives,
+            scoreItem::sixes to yahtzeeHighScores::sixes,
+            scoreItem::threeKind to yahtzeeHighScores::threeKind,
+            scoreItem::fourKind to yahtzeeHighScores::fourKind,
+            scoreItem::fullHouse to yahtzeeHighScores::fullHouse,
+            scoreItem::smallStraight to yahtzeeHighScores::smallStraight,
+            scoreItem::largeStraight to yahtzeeHighScores::largeStraight,
+            scoreItem::chance to yahtzeeHighScores::chance,
+        )
+
+        for ((scoreProperty, statProperty) in scoreToStatMap) {
+            statProperty.get()?.let { updateStatIfNonZero(scoreProperty.get(), it) }
+        }
+
+        if (yahtzeeHighScores.yahtzee != null) {
+            if (scoreItem.yahtzee != 0) {
+                val yahtzeeScore = (scoreItem.yahtzee - 50) / 100
+                yahtzeeHighScores.yahtzee!!.numberOfTimes++
+                repeat(yahtzeeScore) {
+                    yahtzeeHighScores.yahtzee!!.numberOfTimes++
+                }
+                yahtzeeHighScores.yahtzee!!.totalPoints += scoreItem.yahtzee
             }
         }
     }
 
-    suspend fun removeHighScore(scoreItem: YahtzeeScoreItem) {
-        realm.updateInfo<YahtzeeHighScores> {
-            it?.highScoresList?.remove(scoreItem)
+    private fun updateStatIfNonZero(score: Int, stat: YahtzeeScoreStat) {
+        if (score != 0) {
+            stat.numberOfTimes++
+            stat.totalPoints += score
         }
     }
 
-    fun getYahtzeeHighScores() = yahtzeeHighScores
+    suspend fun removeHighScore(scoreItem: YahtzeeScoreItem) {
+        realm.write { findLatest(scoreItem)?.let { delete(it) } }
+    }
+
+    fun getYahtzeeHighScores() = realm.query<YahtzeeScoreItem>()
+        .sort("totalScore", Sort.DESCENDING)
+        .asFlow()
+        .mapNotNull { it.list }
+
+    fun getYahtzeeStats() = yahtzeeHighScores
         .asFlow()
         .mapNotNull { it.obj }
-        .mapNotNull { it.highScoresList.sortedByDescending { it.totalScore } }
+
+    suspend fun updateScores() {
+        realm.write {
+            realm.query<YahtzeeScoreItem>()
+                .sort("totalScore", Sort.DESCENDING)
+                .find()
+                .forEach { it.setScores() }
+        }
+    }
 }
 
 private suspend inline fun <reified T : RealmObject> Realm.updateInfo(crossinline block: MutableRealm.(T?) -> Unit) {
@@ -71,7 +133,25 @@ private inline fun <reified T : RealmObject> Realm.initDbBlocking(crossinline de
 }
 
 internal class YahtzeeHighScores : RealmObject {
-    var highScoresList = realmListOf<YahtzeeScoreItem>()
+    var ones: YahtzeeScoreStat? = YahtzeeScoreStat()
+    var twos: YahtzeeScoreStat? = YahtzeeScoreStat()
+    var threes: YahtzeeScoreStat? = YahtzeeScoreStat()
+    var fours: YahtzeeScoreStat? = YahtzeeScoreStat()
+    var fives: YahtzeeScoreStat? = YahtzeeScoreStat()
+    var sixes: YahtzeeScoreStat? = YahtzeeScoreStat()
+
+    var threeKind: YahtzeeScoreStat? = YahtzeeScoreStat()
+    var fourKind: YahtzeeScoreStat? = YahtzeeScoreStat()
+    var fullHouse: YahtzeeScoreStat? = YahtzeeScoreStat()
+    var smallStraight: YahtzeeScoreStat? = YahtzeeScoreStat()
+    var largeStraight: YahtzeeScoreStat? = YahtzeeScoreStat()
+    var yahtzee: YahtzeeScoreStat? = YahtzeeScoreStat()
+    var chance: YahtzeeScoreStat? = YahtzeeScoreStat()
+}
+
+internal class YahtzeeScoreStat : RealmObject {
+    var numberOfTimes = 0
+    var totalPoints = 0L
 }
 
 internal class YahtzeeScoreItem : RealmObject {
@@ -90,15 +170,15 @@ internal class YahtzeeScoreItem : RealmObject {
     var largeStraight: Int = 0
     var yahtzee: Int = 0
     var chance: Int = 0
+    var smallScore = 0
+    var largeScore = 0
+    var totalScore = 0
 
-    @Ignore
-    val smallScore get() = ones + twos + threes + fours + fives + sixes
-
-    @Ignore
-    val largeScore get() = threeKind + fourKind + fullHouse + smallStraight + largeStraight + yahtzee + chance
-
-    @Ignore
-    val totalScore get() = largeScore + smallScore + if (smallScore >= 63) 35 else 0
+    fun setScores() {
+        smallScore = ones + twos + threes + fours + fives + sixes
+        largeScore = threeKind + fourKind + fullHouse + smallStraight + largeStraight + yahtzee + chance
+        totalScore = largeScore + smallScore + if (smallScore >= 63) 35 else 0
+    }
 }
 
 fun RealmInstant.toInstant(): Instant {

@@ -20,7 +20,6 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
@@ -41,7 +40,7 @@ internal val Emerald = Color(0xFF2ecc71)
 internal val Sunflower = Color(0xFFf1c40f)
 internal val Alizarin = Color(0xFFe74c3c)
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 internal fun YahtzeeScreen(
     vm: YahtzeeViewModel = viewModel(YahtzeeViewModel::class) { YahtzeeViewModel() },
@@ -55,6 +54,10 @@ internal fun YahtzeeScreen(
     val highScores by yahtzeeDatabase
         .getYahtzeeHighScores()
         .collectAsStateWithLifecycle(emptyList())
+
+    val stats by yahtzeeDatabase
+        .getYahtzeeStats()
+        .collectAsStateWithLifecycle(YahtzeeHighScores())
 
     var newGameDialog by remember { mutableStateOf(false) }
 
@@ -81,6 +84,14 @@ internal fun YahtzeeScreen(
         scope.launch { drawerState.close() }
     }
 
+    var statsDialog by remember { mutableStateOf(false) }
+
+    if (statsDialog) {
+        ModalBottomSheet(
+            onDismissRequest = { statsDialog = false }
+        ) { BottomSheetContent(stats) }
+    }
+
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
@@ -89,7 +100,12 @@ internal fun YahtzeeScreen(
                     topBar = {
                         TopAppBar(
                             title = { Text("High Scores") },
-                            actions = { Text(highScores.size.toString()) }
+                            actions = { Text(highScores.size.toString()) },
+                            navigationIcon = {
+                                TextButton(
+                                    onClick = { statsDialog = true }
+                                ) { Text("Stats") }
+                            }
                         )
                     }
                 ) { p ->
@@ -612,12 +628,9 @@ private fun HighScoreItem(
         )
     }
 
-    val smallScore = with(item) { ones + twos + threes + fours + fives + sixes }
-
-    val largeScore =
-        with(item) { threeKind + fourKind + fullHouse + smallStraight + largeStraight + yahtzee + chance }
-
-    val totalScore = largeScore + smallScore + if (smallScore >= 63) 35 else 0
+    val smallScore = item.smallScore
+    val largeScore = item.largeScore
+    val totalScore = item.totalScore
 
     if (deleteDialog) {
         AlertDialog(
@@ -693,4 +706,46 @@ private fun HighScoreItem(
             }
         }
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun BottomSheetContent(
+    scores: YahtzeeHighScores,
+) {
+    TopAppBar(
+        title = { Text("Stats") }
+    )
+
+    LazyColumn(
+        modifier = Modifier.fillMaxSize()
+    ) {
+        item { StatRow("Ones", scores.ones) }
+        item { StatRow("Twos", scores.twos) }
+        item { StatRow("Threes", scores.threes) }
+        item { StatRow("Fours", scores.fours) }
+        item { StatRow("Fives", scores.fives) }
+        item { StatRow("Sixes", scores.sixes) }
+
+        item { StatRow("Three of a Kind", scores.threeKind) }
+        item { StatRow("Four of a Kind", scores.fourKind) }
+        item { StatRow("Full House", scores.fullHouse) }
+        item { StatRow("Small Straight", scores.smallStraight) }
+        item { StatRow("Large Straight", scores.largeStraight) }
+        item { StatRow("Yahtzee", scores.yahtzee) }
+        item { StatRow("Chance", scores.chance) }
+    }
+}
+
+@Composable
+private fun StatRow(type: String, stat: YahtzeeScoreStat?) {
+    ListItem(
+        headlineContent = { Text(type) },
+        supportingContent = {
+            Column {
+                Text("Times Counted: ${stat?.numberOfTimes}")
+                Text("Total Points: ${stat?.totalPoints}")
+            }
+        }
+    )
 }
