@@ -23,9 +23,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.datetime.*
 import kotlinx.datetime.format.MonthNames
@@ -212,16 +210,7 @@ internal fun YahtzeeScreen(
     }
 
     if (vm.scores.isGameOver && vm.showGameOverDialog) {
-        var showExplosion by remember { mutableStateOf(false) }
         LaunchedEffect(Unit) {
-            val showExplosionCheck = if (HIGHSCORE_LIMIT > highScores.size) {
-                true
-            } else {
-                vm.scores.totalScore >= (highScores.lastOrNull()?.totalScore ?: 0)
-            }
-            if (showExplosionCheck) {
-                showExplosion = true
-            }
             yahtzeeDatabase.addHighScore(
                 YahtzeeScoreItem().apply {
                     ones = vm.scores.scoreList.getOrElse(HandType.Ones) { 0 }
@@ -241,11 +230,6 @@ internal fun YahtzeeScreen(
             )
         }
 
-        if (showExplosion) {
-            Explosion()
-            FountainConfetti()
-        }
-
         AlertDialog(
             onDismissRequest = { vm.showGameOverDialog = false },
             title = { Text("Game Over") },
@@ -258,80 +242,6 @@ internal fun YahtzeeScreen(
                     }
                 ) { Text("Stop Playing") }
             }
-        )
-    }
-
-    var showParticles by remember(vm.scores.scoreList[HandType.Yahtzee]) {
-        mutableStateOf(vm.scores.scoreList[HandType.Yahtzee] != null)
-    }
-
-    Crossfade(showParticles) { target ->
-        if (target) {
-            LaunchedEffect(Unit) {
-                delay(3000)
-                showParticles = false
-            }
-            FountainConfetti()
-        }
-    }
-}
-
-@Composable
-internal fun FountainConfetti() {
-    BoxWithConstraints(
-        modifier = Modifier.fillMaxSize()
-    ) {
-        CreateParticles(
-            modifier = Modifier.matchParentSize(),
-            x = with(LocalDensity.current) { maxWidth.toPx() / 2 },
-            y = with(LocalDensity.current) { maxHeight.toPx() },
-            velocity = Velocity(xDirection = 1f, yDirection = -15f, angle = PI, randomize = true),
-            force = Force.Gravity(0.2f),
-            acceleration = Acceleration(0f, -4f),
-            particleSize = ParticleSize.RandomSizes(10..30),
-            particleColor = ParticleColor.RandomColors(
-                listOf(
-                    Color.Yellow,
-                    Color.Blue,
-                    Color.Red,
-                    Color.White,
-                    Color.Magenta,
-                    Color.Green
-                )
-            ),
-            lifeTime = LifeTime(255f, 1f),
-            emissionType = EmissionType.FlowEmission(maxParticlesCount = 300, emissionRate = 0.5f),
-            durationMillis = 3 * 1000
-        )
-    }
-}
-
-@Composable
-internal fun Explosion() {
-    BoxWithConstraints(
-        modifier = Modifier.fillMaxSize()
-    ) {
-        CreateParticles(
-            modifier = Modifier.matchParentSize(),
-            x = with(LocalDensity.current) { maxWidth.toPx() / 2 },
-            y = -50f,
-            velocity = Velocity(xDirection = 1f, yDirection = 1f, randomize = true),
-            force = Force.Gravity(0.01f),
-            acceleration = Acceleration(),
-            particleSize = ParticleSize.RandomSizes(10..30),
-            particleColor = ParticleColor.RandomColors(
-                listOf(
-                    Color.Yellow,
-                    Color.Blue,
-                    Color.Red,
-                    Color.White,
-                    Color.Magenta,
-                    Color.Green
-                )
-            ),
-            lifeTime = LifeTime(255f, 0.01f),
-            emissionType = EmissionType.FlowEmission(maxParticlesCount = 300, emissionRate = 0.5f),
-            durationMillis = 10 * 1000
         )
     }
 }
