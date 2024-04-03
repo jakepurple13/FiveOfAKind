@@ -10,6 +10,6 @@ public actual fun getPlatformName(): String {
 @Composable
 public fun UIShow() {
     App(
-        settings = remember { Settings { Settings.dataStoreFileName } }
+        settings = remember { Settings { Settings.DATASTORE_FILE_NAME } }
     )
 }

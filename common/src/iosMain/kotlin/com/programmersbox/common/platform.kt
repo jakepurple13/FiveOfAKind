@@ -36,7 +36,7 @@ private fun UIShow() {
                     create = false,
                     error = null,
                 )
-                requireNotNull(documentDirectory).path + "/${Settings.dataStoreFileName}"
+                requireNotNull(documentDirectory).path + "/${Settings.DATASTORE_FILE_NAME}"
             }
         }
     )

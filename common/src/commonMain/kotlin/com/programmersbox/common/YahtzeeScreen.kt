@@ -45,8 +45,8 @@ internal fun YahtzeeScreen(
     yahtzeeDatabase: YahtzeeDatabase = remember { YahtzeeDatabase() },
     settings: Settings,
 ) {
-    val diceLook by settings.showDotsOnDice.flow.collectAsStateWithLifecycle(true)
-    val isUsing24HourTime by settings.use24HourTime.flow.collectAsStateWithLifecycle(true)
+    var diceLook by rememberShowDotsOnDice()
+    var isUsing24HourTime by rememberUse24HourTime()
     val scope = rememberCoroutineScope()
 
     val highScores by yahtzeeDatabase
@@ -139,7 +139,7 @@ internal fun YahtzeeScreen(
                         ) { Text("Finish") }*/
                         TextButton(onClick = { newGameDialog = true }) { Text("New Game") }
                         TextButton(
-                            onClick = { scope.launch { settings.use24HourTime.update(!isUsing24HourTime) } },
+                            onClick = { isUsing24HourTime = !isUsing24HourTime },
                         ) {
                             Crossfade(isUsing24HourTime) { target ->
                                 Text(if (target) "24H" else "12H")
@@ -148,7 +148,7 @@ internal fun YahtzeeScreen(
                         Spacer(Modifier.width(12.dp))
                         Dice(1, "")
                             .ShowDice(diceLook, Modifier.size(40.dp)) {
-                                scope.launch { settings.showDotsOnDice.update(!diceLook) }
+                                diceLook = !diceLook
                             }
                     }
                 )
